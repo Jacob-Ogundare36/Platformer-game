@@ -1,24 +1,33 @@
 import os
 import random
 import math
-import pygame
+import pygame  # pygame
 from os import listdir
 from os.path import isfile, join
 
 pygame.init()
 
-#Displays Platformer when opening the window 
-pygame.display.set_caption("Platformer") 
+# Displays Platformer when opening the window
+pygame.display.set_caption("Platformer")
 
-#Dimensions of the window/base values
+# Dimensions of the window/base values
 WIDTH, HEIGHT = 1000, 800
 FPS = 60
 PLAYER_VEL = 5
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
+
 def flip(sprites):
-    return [pygame.transform.flip(sprite, True, False) for sprite in sprites]
+    return [
+        pygame.transform.flip(sprite, True, False) for sprite in sprites
+    ]  # transforms sprites left/right
+
+
+"""
+Get the sprite sheet from the files and render them 
+"""
+
 
 def load_sprite_sheets(dir1, dir2, width, height, direction=False):
     path = join("Python-Platformer-main", "assets", dir1, dir2)
@@ -31,9 +40,9 @@ def load_sprite_sheets(dir1, dir2, width, height, direction=False):
 
         sprites = []
         for i in range(sprite_sheet.get_width() // width):
-            surface = pygame.Surface((width,height), pygame.SRCALPHA, 32)
+            surface = pygame.Surface((width, height), pygame.SRCALPHA, 32)
             rect = pygame.Rect(i * width, 0, width, height)
-            surface.blit(sprite_sheet, (0,0), rect)
+            surface.blit(sprite_sheet, (0, 0), rect)
             sprites.append(pygame.transform.scale2x(surface))
 
         if direction:
@@ -43,17 +52,29 @@ def load_sprite_sheets(dir1, dir2, width, height, direction=False):
             all_sprites[image.replace(".png", "")] = sprites
 
     return all_sprites
-        
+
+
+"""
+Terrain block init
+"""
+
+
 def get_block(size):
     path = join("Python-Platformer-main", "assets", "Terrain", "Terrain.png")
     image = pygame.image.load(path).convert_alpha()
-    surface = pygame.Surface((size,size), pygame.SRCALPHA, 32)
+    surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
     rect = pygame.Rect(96, 0, size, size)
-    surface.blit(image, (0,0), rect)
+    surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
 
-class Player(pygame.sprite.Sprite): #Allows pygame to handle collisions
-    COLOR = (255, 0 , 0)
+
+"""
+Each player attributes and methods
+"""
+
+
+class Player(pygame.sprite.Sprite):  # Allows pygame to handle collisions
+    COLOR = (255, 0, 0)
     GRAVITY = 1
     SPRITES = load_sprite_sheets("MainCharacters", "NinjaFrog", 32, 32, True)
     ANIMATION_DELAY = 2
@@ -66,7 +87,7 @@ class Player(pygame.sprite.Sprite): #Allows pygame to handle collisions
         self.mask = None
         self.direction = "left"
         self.animation_count = 0
-        self.fall_count = 0 # How long you have been in the air falling
+        self.fall_count = 0  # How long you have been in the air falling
         self.jump_count = 0
         self.hit = False
         self.hit_count = 0
@@ -97,13 +118,13 @@ class Player(pygame.sprite.Sprite): #Allows pygame to handle collisions
         if self.direction != "right":
             self.direction = "right"
             self.animation_count = 0
-    
+
     def loop(self, fps):
-        self.y_vel += min(1, (self.fall_count/fps) * self.GRAVITY)
+        self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY)
         self.move(self.x_vel, self.y_vel)
-        
+
         if self.hit:
-            self.hit_count += 1 
+            self.hit_count += 1
         if self.hit_count > fps * 2:
             self.hit = False
             self.hit_count = 0
@@ -113,12 +134,12 @@ class Player(pygame.sprite.Sprite): #Allows pygame to handle collisions
 
     def landed(self):
         self.fall_count = 0
-        self.y_vel = 0 
+        self.y_vel = 0
         self.jump_count = 0
 
     def hit_head(self):
         self.count = 0
-        self.y_vel = -1 
+        self.y_vel = -1
 
     def update_sprite(self):
         sprite_sheet = "idle"
@@ -145,14 +166,20 @@ class Player(pygame.sprite.Sprite): #Allows pygame to handle collisions
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
         self.mask = pygame.mask.from_surface(self.sprite)
 
-    def draw(self, win, offset_x): #win = window
+    def draw(self, win, offset_x):  # win = window
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y))
+
+
+"""
+Each object attributes and methods
+"""
+
 
 class Object(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, name=None):
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
-        self.image = pygame.Surface((width,height), pygame.SRCALPHA)
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
         self.width = width
         self.height = height
         self.name = name
@@ -160,15 +187,28 @@ class Object(pygame.sprite.Sprite):
     def draw(self, win, offset_x):
         win.blit(self.image, (self.rect.x - offset_x, self.rect.y))
 
+
+"""
+Each blocks attributes and methods
+"""
+
+
 class Block(Object):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, size)
         block = get_block(size)
-        self.image.blit(block, (0,0))
+        self.image.blit(block, (0, 0))
         self.mask = pygame.mask.from_surface(self.image)
+
+
+"""
+Represents "any" obstacle in the game
+"""
+
 
 class Fire(Object):
     ANIMATION_DELAY = 3
+
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height, "fire")
         self.fire = load_sprite_sheets("Traps", "Fire", width, height)
@@ -182,7 +222,7 @@ class Fire(Object):
 
     def off(self):
         self.animation_name = "off"
-    
+
     def loop(self):
         sprites = self.fire[self.animation_name]
         sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
@@ -194,8 +234,16 @@ class Fire(Object):
         if self.animation_count // self.ANIMATION_DELAY > len(sprites):
             self.animation_count = 0
 
+
+"""
+Loads a series of backgrounds and renders
+"""
+
+
 def get_background(name):
-    image = pygame.image.load(join("Python-Platformer-main", "assets", "Background", name)) # Gets the directory of the background
+    image = pygame.image.load(
+        join("Python-Platformer-main", "assets", "Background", name)
+    )  # Gets the directory of the background
     _, _, width, height = image.get_rect()
     tiles = []
 
@@ -205,6 +253,12 @@ def get_background(name):
             tiles.append(pos)
 
     return tiles, image
+
+
+"""
+Objs position on the window
+"""
+
 
 def draw(window, background, bg_image, player, objects, offset_x):
     for tile in background:
@@ -216,6 +270,12 @@ def draw(window, background, bg_image, player, objects, offset_x):
     player.draw(window, offset_x)
 
     pygame.display.update()
+
+
+"""
+pain and suffering in understanding how objs and mask interact with each other to provide pixel perfect collision
+"""
+
 
 def handle_vertical_collision(player, objects, dy):
     collided_objects = []
@@ -232,6 +292,12 @@ def handle_vertical_collision(player, objects, dy):
 
     return collided_objects
 
+
+"""
+pixel perfect collision between players and objects 
+"""
+
+
 def collide(player, objects, dx):
     player.move(dx, 0)
     player.update()
@@ -245,10 +311,16 @@ def collide(player, objects, dx):
     player.update()
     return collided_obj
 
+
+"""
+Interactivity using keys to animate movement on the window
+"""
+
+
 def handle_move(player, objects):
     keys = pygame.key.get_pressed()
 
-    player.x_vel = 0 # only when pressing the key
+    player.x_vel = 0  # only when pressing the key
     collide_left = collide(player, objects, -PLAYER_VEL * 2)
     collide_right = collide(player, objects, PLAYER_VEL * 2)
     if keys[pygame.K_a] and not collide_left:
@@ -257,10 +329,16 @@ def handle_move(player, objects):
         player.move_right(PLAYER_VEL)
 
     vertical_collide = handle_vertical_collision(player, objects, player.y_vel)
-    to_check = [collide_left, collide_right, *vertical_collide] 
+    to_check = [collide_left, collide_right, *vertical_collide]
     for obj in to_check:
         if obj and obj.name == "fire":
             player.make_hit()
+
+
+"""
+Defines all the constants/obj/players to provide a scrolling game
+"""
+
 
 def main(window):
     clock = pygame.time.Clock()
@@ -268,12 +346,19 @@ def main(window):
 
     block_size = 96
 
-    player = Player(100,100,50,50)
-    fire = Fire(100, HEIGHT - block_size - 64, 16, 32) 
+    player = Player(100, 100, 50, 50)
+    fire = Fire(100, HEIGHT - block_size - 64, 16, 32)
     fire.on()
-    floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range (-WIDTH // block_size, (WIDTH * 2) // block_size)]
-    objects = [*floor, Block(0, HEIGHT - block_size * 2, block_size),
-               Block(block_size * 3, HEIGHT - block_size * 4, block_size), fire]
+    floor = [
+        Block(i * block_size, HEIGHT - block_size, block_size)
+        for i in range(-WIDTH // block_size, (WIDTH * 2) // block_size)
+    ]
+    objects = [
+        *floor,
+        Block(0, HEIGHT - block_size * 2, block_size),
+        Block(block_size * 3, HEIGHT - block_size * 4, block_size),
+        fire,
+    ]
 
     offset_x = 0
     scroll_area_width = 200
@@ -294,12 +379,14 @@ def main(window):
         handle_move(player, objects)
         draw(window, background, bg_image, player, objects, offset_x)
 
-        if ((player.rect.right - offset_x >= WIDTH - scroll_area_width and player.x_vel > 0) or (player.rect.left - offset_x <= scroll_area_width and player.x_vel < 0)):
+        if (
+            player.rect.right - offset_x >= WIDTH - scroll_area_width
+            and player.x_vel > 0
+        ) or (player.rect.left - offset_x <= scroll_area_width and player.x_vel < 0):
             offset_x += player.x_vel
 
     pygame.quit()
     quit
-
 
 
 if __name__ == "__main__":
